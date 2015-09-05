@@ -11,15 +11,11 @@ Servo xAxisServo;
 Servo yAxisServo;
 Servo triggerServo;
 
-bool xRead       = false;
-bool zRead       = false;
-bool yRead       = false;
-bool bearingRead = false;
+bool xRead = false;
+bool yRead = false;
 
 int16_t xAxis;
 int16_t yAxis;
-int16_t zAxis;
-int16_t bearing;
 
 void setup() {
   Serial.begin(115200);
@@ -49,7 +45,7 @@ void loop() {
 
 void determineState() {
   checkForConnection();
-  if (is_connected) readFromPebble();
+  readFromPebble();
 }
 
 void checkForConnection() {
@@ -83,25 +79,15 @@ void readFromPebble() {
         yAxis = *(int16_t*)pebble_buffer;
         yRead = true;
       }
-      else if (attribute_id == 0x1003) {
-        zAxis = *(int16_t*)pebble_buffer;
-        zRead = true;
-      }
-      else if (attribute_id == 0x1005) {
-        bearing = *(int16_t*)pebble_buffer;
-        bearingRead = true;
-      }
     }
   }
 }
 
 void display() {
-  if (xRead && yRead && zRead && bearingRead) {
-    xRead       = false;
-    zRead       = false;
-    yRead       = false;
-    bearingRead = false;
-    Serial.printf("%d\t%d\t%d\t%d\n", xAxis, yAxis, zAxis, bearing);
+  if (xRead && yRead) {
+    xRead = false;
+    yRead = false;
+    Serial.printf("%d\t%d\n", xAxis, yAxis);
   }
 }
 
