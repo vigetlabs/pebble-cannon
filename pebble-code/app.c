@@ -14,6 +14,7 @@ static SmartstrapAttribute *y_attr_attribute;
 static SmartstrapAttribute *z_attr_attribute;
 static SmartstrapAttribute *tap_attr_attribute;
 static SmartstrapAttribute *compass_attr_attribute;
+static SmartstrapAttribute *select_attr_attribute;
 
 
 static void prv_update_text(void) {
@@ -78,8 +79,50 @@ static void prv_main_window_unload(Window *window) {
   text_layer_destroy(s_status_layer);
 }
 
+void send_select() {
+  SmartstrapResult result;
+  int16_t select = 1;
+
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "TAP DAT");
+
+  if (!smartstrap_service_is_available(smartstrap_attribute_get_service_id(select_attr_attribute))) {
+    // APP_LOG(APP_LOG_LEVEL_DEBUG, "tap_attr_attribute is not available");
+    return;
+  }
+
+  // get the write buffer
+  uint8_t *buffer = NULL;
+  size_t length = 0;
+  result = smartstrap_attribute_begin_write(select_attr_attribute, &buffer, &length);
+  if (result != SmartstrapResultOk) {
+    // APP_LOG(APP_LOG_LEVEL_ERROR, "Write of tap_attr_attribute failed with result %d", result);
+    return;
+  }
+
+  // write the data into the buffer
+  memset(buffer, 0, sizeof(buffer));
+  memcpy(buffer, &select, 16);
+
+  // send it off
+  result = smartstrap_attribute_end_write(select_attr_attribute, 16, true);
+  if (result != SmartstrapResultOk) {
+  }
+}
+
+void select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+  // Window *window = (Window *)context;
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "SELECT CLICKED");
+  send_select();
+}
+
+void config_provider(Window *window) {
+  window_single_click_subscribe(BUTTON_ID_SELECT, select_single_click_handler);
+}
+
 static void prv_init(void) {
   s_main_window = window_create();
+
+  window_set_click_config_provider(s_main_window, (ClickConfigProvider) config_provider);
 
   window_set_window_handlers(s_main_window, (WindowHandlers) {
     .load = prv_main_window_load,
@@ -99,6 +142,7 @@ static void prv_init(void) {
   z_attr_attribute = smartstrap_attribute_create(0x1001, 0x1003, 16);
   tap_attr_attribute = smartstrap_attribute_create(0x1001, 0x1004, 16);
   compass_attr_attribute = smartstrap_attribute_create(0x1001, 0x1005, 16);
+  select_attr_attribute = smartstrap_attribute_create(0x1001, 0x1006, 16);
   // app_timer_register(1000, prv_send_request, NULL);
 }
 
@@ -214,36 +258,6 @@ static void send_compass_data(int16_t compass_data) {
 
   // send it off
   result = smartstrap_attribute_end_write(compass_attr_attribute, 16, true);
-  if (result != SmartstrapResultOk) {
-  }
-}
-
-static void send_tap() {
-  SmartstrapResult result;
-  int16_t tap = 1;
-
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "TAP DAT");
-
-  if (!smartstrap_service_is_available(smartstrap_attribute_get_service_id(tap_attr_attribute))) {
-    // APP_LOG(APP_LOG_LEVEL_DEBUG, "tap_attr_attribute is not available");
-    return;
-  }
-
-  // get the write buffer
-  uint8_t *buffer = NULL;
-  size_t length = 0;
-  result = smartstrap_attribute_begin_write(tap_attr_attribute, &buffer, &length);
-  if (result != SmartstrapResultOk) {
-    // APP_LOG(APP_LOG_LEVEL_ERROR, "Write of tap_attr_attribute failed with result %d", result);
-    return;
-  }
-
-  // write the data into the buffer
-  memset(buffer, 0, sizeof(buffer));
-  memcpy(buffer, &tap, 16);
-
-  // send it off
-  result = smartstrap_attribute_end_write(tap_attr_attribute, 16, true);
   if (result != SmartstrapResultOk) {
   }
 }
