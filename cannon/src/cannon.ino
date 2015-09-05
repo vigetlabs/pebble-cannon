@@ -22,33 +22,46 @@ void setup() {
                                       SUPPORTED_SERVICES, NUM_SERVICES);
 }
 
+bool xRead = false;
+bool zRead = false;
+bool yRead = false;
+
+int16_t xAxis;
+int16_t yAxis;
+int16_t zAxis;
+
 void loop() {
   // Let the ArduinoPebbleSerial code do its processing
   size_t length;
   uint16_t service_id;
   uint16_t attribute_id;
   RequestType type;
+
   if (ArduinoPebbleSerial::feed(&service_id, &attribute_id, &length, &type)) {
     if (service_id == 0x1001) {
       if (attribute_id == 0x1001) {
-        int16_t xAxis = *(int16_t*)pebble_buffer;
-
-        Serial.print("xAxis: ");
-        Serial.println(xAxis);
+        xAxis = *(int16_t*)pebble_buffer;
+        xRead = true;
       }
       else if (attribute_id == 0x1002) {
-        int16_t yAxis = *(int16_t*)pebble_buffer;
-
-        Serial.print("yAxis: ");
-        Serial.println(yAxis);
+        yAxis = *(int16_t*)pebble_buffer;
+        yRead = true;
       }
       else if (attribute_id == 0x1003) {
-        int16_t zAxis = *(int16_t*)pebble_buffer;
-
-        Serial.print("zAxis: ");
-        Serial.println(zAxis);
+        zAxis = *(int16_t*)pebble_buffer;
+        zRead = true;
+      }
+      else if (attribute_id == 0x1004) {
+        Serial.println("TAPP!");
       }
     }
+  }
+
+  if (xRead && yRead && zRead) {
+    xRead = false;
+    zRead = false;
+    yRead = false;
+    Serial.printf("%d\t%d\t%d\n", xAxis, yAxis, zAxis);
   }
 
   static bool is_connected = false;
@@ -57,17 +70,6 @@ void loop() {
       Serial.println("Connected to the smartstrap!");
       is_connected = true;
     }
-
-    // static uint32_t last_notify = 0;
-    // if (last_notify == 0) {
-    //   last_notify = millis();
-    // }
-    // // notify the pebble every 2.5 seconds
-    // if (millis() - last_notify  > 2500) {
-    //   Serial.println("Sending notification for 0x1001,0x1001");
-    //   ArduinoPebbleSerial::notify(0x1001, 0x1001);
-    //   last_notify = millis();
-    // }
   } else {
     if (is_connected) {
       Serial.println("Disconnected from the smartstrap!");
