@@ -11,8 +11,11 @@ Servo xAxisServo;
 Servo yAxisServo;
 Servo fireServo;
 
+int buttonPin = 12;
+
 bool xRead = false;
 bool yRead = false;
+bool fire  = false;
 
 int16_t xAxis;
 int16_t yAxis;
@@ -22,8 +25,12 @@ int yPosition = 90;
 
 void setup() {
   Serial.begin(115200);
+
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(buttonPin, INPUT);
+
   digitalWrite(LED_BUILTIN, LOW);
+
   for (int i = 0; i < 3; i++) {
     delay(100);
     digitalWrite(LED_BUILTIN, HIGH);
@@ -50,6 +57,9 @@ void loop() {
 }
 
 void determineState() {
+  if (digitalRead(buttonPin) == HIGH) {
+    fire = true;
+  }
   checkForConnection();
   readFromPebble();
 }
@@ -85,7 +95,7 @@ void readFromPebble() {
         yRead = true;
       }
       else if (attribute_id == 0x1006) {
-        fireTheCannon();
+        fire = true;
       }
     }
   }
@@ -97,11 +107,16 @@ void display() {
     yRead = false;
     Serial.printf("%d\t%d\n", xAxis, yAxis);
 
-    xPosition = map(xAxis, -1000, 1000, 0, 180);
-    yPosition = map(yAxis, -1000, 1000, 0, 180);
+    xPosition = map(xAxis, -1000, 1000, 180, 0);
+    yPosition = map(yAxis, -1000, 1000, 0,   180);
 
     xAxisServo.write(xPosition);
     yAxisServo.write(yPosition);
+  }
+
+  if (fire) {
+    fireTheCannon();
+    fire = false;
   }
 }
 
