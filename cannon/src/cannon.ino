@@ -10,14 +10,12 @@ void setup() {
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-  delay(250);
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(250);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(250);
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(250);
-  digitalWrite(LED_BUILTIN, LOW);
+  for (int i = 0; i < 3; i++) {
+    delay(100);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(100);
+    digitalWrite(LED_BUILTIN, LOW);
+  }
 
   // Teensy 3.0/3.1 uses hardware serial mode (pins 0/1) with RX/TX shorted together
   ArduinoPebbleSerial::begin_hardware(pebble_buffer, sizeof(pebble_buffer), Baud57600,
@@ -31,11 +29,25 @@ void loop() {
   uint16_t attribute_id;
   RequestType type;
   if (ArduinoPebbleSerial::feed(&service_id, &attribute_id, &length, &type)) {
-    if ((service_id == 0x1001) && (attribute_id == 0x1001)) {
-      int16_t yAxis = *(int16_t*)pebble_buffer;
+    if (service_id == 0x1001) {
+      if (attribute_id == 0x1001) {
+        int16_t xAxis = *(int16_t*)pebble_buffer;
 
-      Serial.print("yAxis: ");
-      Serial.println(yAxis);
+        Serial.print("xAxis: ");
+        Serial.println(xAxis);
+      }
+      else if (attribute_id == 0x1002) {
+        int16_t yAxis = *(int16_t*)pebble_buffer;
+
+        Serial.print("yAxis: ");
+        Serial.println(yAxis);
+      }
+      else if (attribute_id == 0x1003) {
+        int16_t zAxis = *(int16_t*)pebble_buffer;
+
+        Serial.print("zAxis: ");
+        Serial.println(zAxis);
+      }
     }
   }
 
