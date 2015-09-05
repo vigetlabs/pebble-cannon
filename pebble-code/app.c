@@ -117,6 +117,8 @@ void select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 void config_provider(Window *window) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_single_click_handler);
+  window_single_click_subscribe(BUTTON_ID_DOWN, select_single_click_handler);
+  window_single_click_subscribe(BUTTON_ID_UP, select_single_click_handler);
 }
 
 static void prv_init(void) {
