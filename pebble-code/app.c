@@ -13,11 +13,12 @@ static SmartstrapAttribute *x_attr_attribute;
 static SmartstrapAttribute *y_attr_attribute;
 static SmartstrapAttribute *z_attr_attribute;
 static SmartstrapAttribute *tap_attr_attribute;
+static SmartstrapAttribute *compass_attr_attribute;
 
 
 static void prv_update_text(void) {
   if (smartstrap_service_is_available(0x1001)) {
-    text_layer_set_text(s_status_layer, "Connected!");
+    text_layer_set_text(s_status_layer, "Fire at will!");
   } else {
     text_layer_set_text(s_status_layer, "Connecting...");
   }
@@ -97,11 +98,15 @@ static void prv_init(void) {
   y_attr_attribute = smartstrap_attribute_create(0x1001, 0x1002, 16);
   z_attr_attribute = smartstrap_attribute_create(0x1001, 0x1003, 16);
   tap_attr_attribute = smartstrap_attribute_create(0x1001, 0x1004, 16);
+  compass_attr_attribute = smartstrap_attribute_create(0x1001, 0x1005, 16);
   // app_timer_register(1000, prv_send_request, NULL);
 }
 
 static void prv_deinit(void) {
   window_destroy(s_main_window);
+  // compass_service_unsubscribe();
+  // accel_tap_service_unsubscribe();
+  accel_data_service_unsubscribe();
   smartstrap_unsubscribe();
 }
 
@@ -186,6 +191,33 @@ static void send_z_data(int16_t zdata) {
   }
 }
 
+static void send_compass_data(int16_t compass_data) {
+  SmartstrapResult result;
+
+  if (!smartstrap_service_is_available(smartstrap_attribute_get_service_id(compass_attr_attribute))) {
+    // APP_LOG(APP_LOG_LEVEL_DEBUG, "x_attr_attribute is not available");
+    return;
+  }
+
+  // get the write buffer
+  uint8_t *buffer = NULL;
+  size_t length = 0;
+  result = smartstrap_attribute_begin_write(compass_attr_attribute, &buffer, &length);
+  if (result != SmartstrapResultOk) {
+    // APP_LOG(APP_LOG_LEVEL_ERROR, "Write of x_attr_attribute failed with result %d", result);
+    return;
+  }
+
+  // write the data into the buffer
+  memset(buffer, 0, sizeof(buffer));
+  memcpy(buffer, &compass_data, 16);
+
+  // send it off
+  result = smartstrap_attribute_end_write(compass_attr_attribute, 16, true);
+  if (result != SmartstrapResultOk) {
+  }
+}
+
 static void send_tap() {
   SmartstrapResult result;
   int16_t tap = 1;
@@ -219,7 +251,7 @@ static void send_tap() {
 static void send_data(AccelData data) {
   send_x_data(data.x);
   send_y_data(data.y);
-  send_z_data(data.z);
+  // send_z_data(data.z);
 }
 
 static void data_handler(AccelData *data, uint32_t num_samples) {
@@ -250,15 +282,40 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
     }
     break;
   }
-  send_tap();
+  // send_tap();
+}
+
+static void compass_heading_handler(CompassHeadingData heading_data) {
+  if (heading_data.compass_status != CompassStatusDataInvalid) {
+    int16_t heading = (int16_t)TRIGANGLE_TO_DEG(heading_data.magnetic_heading);
+    // send_compass_data(heading);
+  }
+
+  // Display state of the compass
+  static char s_valid_buf[64];
+  switch (heading_data.compass_status) {
+    case CompassStatusDataInvalid:
+      snprintf(s_valid_buf, sizeof(s_valid_buf), "%s", "Compass is calibrating!\n\nMove your arm to aid calibration.");
+      break;
+    case CompassStatusCalibrating:
+      snprintf(s_valid_buf, sizeof(s_valid_buf), "%s", "Fine tuning...");
+      break;
+    case CompassStatusCalibrated:
+      snprintf(s_valid_buf, sizeof(s_valid_buf), "%s", "Calibrated");
+      break;
+  }
+
+  APP_LOG(APP_LOG_LEVEL_DEBUG, s_valid_buf);
 }
 
 int main(void) {
   prv_init();
   APP_LOG(APP_LOG_LEVEL_DEBUG, "STARTING APP");
   if (x_attr_attribute && y_attr_attribute && z_attr_attribute) {
+    // compass_service_set_heading_filter(2 * (TRIG_MAX_ANGLE / 360));
+    // compass_service_subscribe(&compass_heading_handler);
+    // accel_tap_service_subscribe(tap_handler);
     uint32_t num_samples = 3;
-    accel_tap_service_subscribe(tap_handler);
     accel_data_service_subscribe(num_samples, data_handler);
     app_event_loop();
   }
