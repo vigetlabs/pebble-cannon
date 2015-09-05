@@ -9,13 +9,16 @@ static bool is_connected = false;
 
 Servo xAxisServo;
 Servo yAxisServo;
-Servo triggerServo;
+Servo fireServo;
 
 bool xRead = false;
 bool yRead = false;
 
 int16_t xAxis;
 int16_t yAxis;
+
+int xPosition = 90;
+int yPosition = 90;
 
 void setup() {
   Serial.begin(115200);
@@ -34,13 +37,16 @@ void setup() {
 
   xAxisServo.attach(3);
   yAxisServo.attach(4);
-  triggerServo.attach(5);
+  fireServo.attach(5);
+
+  xAxisServo.write(xPosition);
+  yAxisServo.write(yPosition);
+  fireServo.write(0);
 }
 
 void loop() {
   determineState();
   display();
-  // servoMessingAround();
 }
 
 void determineState() {
@@ -63,7 +69,6 @@ void checkForConnection() {
 }
 
 void readFromPebble() {
-  // Let the ArduinoPebbleSerial code do its processing
   size_t length;
   uint16_t service_id;
   uint16_t attribute_id;
@@ -79,6 +84,9 @@ void readFromPebble() {
         yAxis = *(int16_t*)pebble_buffer;
         yRead = true;
       }
+      else if (attribute_id == 0x1006) {
+        fireTheCannon();
+      }
     }
   }
 }
@@ -88,21 +96,18 @@ void display() {
     xRead = false;
     yRead = false;
     Serial.printf("%d\t%d\n", xAxis, yAxis);
+
+    xPosition = map(xAxis, -1000, 1000, 0, 180);
+    yPosition = map(yAxis, -1000, 1000, 0, 180);
+
+    xAxisServo.write(xPosition);
+    yAxisServo.write(yPosition);
   }
 }
 
-void servoMessingAround() {
-  int pos;
-  for(pos = 10; pos < 170; pos += 1) {
-    xAxisServo.write(pos);
-    yAxisServo.write(pos);
-    triggerServo.write(pos);
-    delay(15);
-  }
-  for(pos = 180; pos>=1; pos-=1) {
-    xAxisServo.write(pos);
-    yAxisServo.write(pos);
-    triggerServo.write(pos);
-    delay(15);
-  }
+void fireTheCannon() {
+  Serial.println("FIRE CANNON!");
+  fireServo.write(180);
+  delay(750);
+  fireServo.write(0);
 }
