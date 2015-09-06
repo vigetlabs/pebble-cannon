@@ -7,8 +7,8 @@ static const uint8_t NUM_SERVICES = 2;
 static uint8_t pebble_buffer[256];
 static bool is_connected = false;
 
-Servo xAxisServo;
-Servo yAxisServo;
+Servo xServo;
+Servo yServo;
 Servo fireServo;
 
 int buttonPin = 12;
@@ -20,8 +20,10 @@ bool fire  = false;
 int16_t xAxis;
 int16_t yAxis;
 
-int xPosition = 90;
-int yPosition = 90;
+int xPosition = 10;
+int yPosition = 10;
+int minTriggerPosition = 0;
+int maxTriggerPosition = 50;
 
 void setup() {
   Serial.begin(115200);
@@ -42,13 +44,13 @@ void setup() {
   ArduinoPebbleSerial::begin_hardware(pebble_buffer, sizeof(pebble_buffer), Baud57600,
                                       SUPPORTED_SERVICES, NUM_SERVICES);
 
-  xAxisServo.attach(3);
-  yAxisServo.attach(4);
+  xServo.attach(3);
+  yServo.attach(4);
   fireServo.attach(5);
 
-  xAxisServo.write(xPosition);
-  yAxisServo.write(yPosition);
-  fireServo.write(0);
+  xServo.write(xPosition);
+  yServo.write(yPosition);
+  fireServo.write(minTriggerPosition);
 }
 
 void loop() {
@@ -107,11 +109,11 @@ void display() {
     yRead = false;
     Serial.printf("%d\t%d\n", xAxis, yAxis);
 
-    xPosition = map(xAxis, -1000, 1000, 180, 0);
-    yPosition = map(yAxis, -1000, 1000, 0,   180);
+    xPosition = map(xAxis, -1000, 1000, 170, 10);
+    yPosition = map(yAxis, -1000, 1000, 10,  170);
 
-    xAxisServo.write(xPosition);
-    yAxisServo.write(yPosition);
+    xServo.write(xPosition);
+    yServo.write(yPosition);
   }
 
   if (fire) {
@@ -122,7 +124,7 @@ void display() {
 
 void fireTheCannon() {
   Serial.println("FIRE CANNON!");
-  fireServo.write(180);
+  fireServo.write(maxTriggerPosition);
   delay(750);
-  fireServo.write(0);
+  fireServo.write(minTriggerPosition);
 }
