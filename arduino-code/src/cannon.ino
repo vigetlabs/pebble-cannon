@@ -18,8 +18,14 @@ bool fire  = false;
 int16_t xAxis;
 int16_t yAxis;
 
-int xPosition = 10;
-int yPosition = 10;
+int xMax = 150;
+int xMin = 30;
+
+int yMax = 110;
+int yMin = 90;
+
+int xPosition = 90;
+int yPosition = 100;
 int minTriggerPosition = 0;
 int maxTriggerPosition = 50;
 
@@ -103,8 +109,8 @@ void display() {
     yRead = false;
     Serial.printf("%d\t%d\n", xAxis, yAxis);
 
-    xPosition = map(xAxis, -1000, 1000, 170, 10);
-    yPosition = map(yAxis, -1000, 1000, 10,  170);
+    xPosition = map(xAxis, -1000, 1000, xMax, xMin);
+    yPosition = map(yAxis, -1000, 1000, yMax, yMin);
 
     xServo.write(xPosition);
     yServo.write(yPosition);
