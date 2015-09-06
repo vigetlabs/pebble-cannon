@@ -11,8 +11,6 @@ Servo xServo;
 Servo yServo;
 Servo fireServo;
 
-int buttonPin = 12;
-
 bool xRead = false;
 bool yRead = false;
 bool fire  = false;
@@ -29,7 +27,6 @@ void setup() {
   Serial.begin(115200);
 
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(buttonPin, INPUT);
 
   digitalWrite(LED_BUILTIN, LOW);
 
@@ -59,9 +56,6 @@ void loop() {
 }
 
 void determineState() {
-  if (digitalRead(buttonPin) == HIGH) {
-    fire = true;
-  }
   checkForConnection();
   readFromPebble();
 }
